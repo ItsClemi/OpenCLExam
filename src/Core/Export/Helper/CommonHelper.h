@@ -31,7 +31,19 @@ inline void SafeRelease( T** pPtr )
 	}
 }
 
+inline std::wstring StringToWstring( const std::string& str )
+{
+	std::wstring_convert< std::codecvt_utf8< wchar_t >, wchar_t > conv;
 
+	return conv.from_bytes( str );
+}
+
+inline std::string WstringToString( const std::wstring& str )
+{
+	std::wstring_convert< std::codecvt_utf8< wchar_t >, wchar_t > conv;
+
+	return conv.to_bytes( str );
+}
 
 namespace Profiler
 {

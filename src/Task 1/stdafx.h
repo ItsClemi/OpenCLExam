@@ -8,10 +8,7 @@
 #include <tchar.h>
 
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <array>
+
 
 #include <Core/Export/CoreExport.h>
 
