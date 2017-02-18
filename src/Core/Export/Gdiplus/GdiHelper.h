@@ -23,6 +23,7 @@ struct __declspec( novtable ) SBitmapData
 	size_t		m_nHeight;
 	size_t		m_nStride;
 
+	size_t		m_nPixelCount;
 	size_t		m_nBuffLen;
 	SPixel*		m_pBuffer;
 };

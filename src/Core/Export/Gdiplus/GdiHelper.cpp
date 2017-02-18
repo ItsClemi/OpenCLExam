@@ -40,6 +40,8 @@ const std::shared_ptr< SBitmapData > GetBitmapData( const wchar_t* szPath )
 	{
 		pData->m_nWidth = static_cast< size_t >( pGdiBitmap->GetWidth( ) );
 		pData->m_nHeight = static_cast< size_t >( pGdiBitmap->GetHeight( ) );
+
+		pData->m_nPixelCount = pData->m_nWidth* pData->m_nHeight;
 	}
 
 	Rect rcLock( 
