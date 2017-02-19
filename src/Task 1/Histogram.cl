@@ -76,32 +76,3 @@ __kernel void reduceStatistic( __global int* pResult, int nWorkGroups )
 	pResult[ lid ] = counts[ lid ];
 
 }
-
-/*
-
-//const int nActualPixel = ( groupid * 8192 ) + ( lid + k * i * 32 );
-
-if( nActualPixel < nPixelCount )
-{
-	//const uchar4 pixel = pPixelBuffer[ nActualPixel ];
-
-	
-	const float R = ( float )pixel.x;
-	const float G = ( float )pixel.y;
-	const float B = ( float )pixel.z;
-	const float A = ( float )pixel.w;
-	
-
-	const uchar R = ( ( uchar )pPixelBuffer[ nActualPixel + 0 ] );
-	const uchar G = ( ( uchar )pPixelBuffer[ nActualPixel + 1 ] );
-	const uchar B = ( ( uchar )pPixelBuffer[ nActualPixel + 2 ] );
-	const uchar A = ( ( uchar )pPixelBuffer[ nActualPixel + 3 ] );
-
-	float I = A; //0.299 * R + 0.587 * G + 0.114 * B;
-	
-	//counts[ lid ][ ( ( int )I ) ]++;
-	//counts[ lid ][ G ]++;
-
-
-}
-*/

@@ -8,8 +8,6 @@
 #include <tchar.h>
 
 
-
-
 #include <Core/Export/CoreExport.h>
 
 
