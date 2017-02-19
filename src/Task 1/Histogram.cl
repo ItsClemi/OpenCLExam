@@ -1,6 +1,6 @@
 
 
-__kernel void calcStatistic( __global int* pPixelBuffer, int nPixelCount, __global int* pResult, __global int* pDebug )
+__kernel void calcStatistic( __global uchar* pPixelBuffer, int nPixelCount, __global int* pResult )
 {
 	const int lid = get_local_id( 0 );
 	const int groupid = get_group_id( 0 );		
@@ -16,11 +16,9 @@ __kernel void calcStatistic( __global int* pPixelBuffer, int nPixelCount, __glob
 	barrier( CLK_LOCAL_MEM_FENCE );
 
 
-	const int nPixelOffset = ( groupid * 8192 );
-
-
 	//> 8(rounds) * 32(pixel) * 32(workitems) = 8192 pixel
-	
+
+	const int nPixelOffset = ( groupid * 8192 );
 	for( int r = 0; r < 8; r++ )
 	{
 		for( int k = 0; k < 32; k++ )
@@ -30,25 +28,16 @@ __kernel void calcStatistic( __global int* pPixelBuffer, int nPixelCount, __glob
 
 			if( off < nPixelCount )
 			{
-				uchar4 pixel = as_uchar4( pPixelBuffer[ off * sizeof( int ) ] );
+				//> endian remapping (see SPixel struct)
+				const uchar R = as_uchar( pPixelBuffer[ ( off * 4 ) + 2 ] );
+				const uchar G = as_uchar( pPixelBuffer[ ( off * 4 ) + 1 ] );
+				const uchar B = as_uchar( pPixelBuffer[ ( off * 4 ) + 0 ] );
+				const uchar A = as_uchar( pPixelBuffer[ ( off * 4 ) + 3 ] );
 
-				const uchar R = pixel.x;
-				const uchar G = pixel.y;
-				const uchar B = pixel.z;
-				const uchar A = pixel.w;
-
-				float I = 25.0f;//0.299 * R + 0.587 * G + 0.114 * B;
+				float I = 0.299 * R + 0.587 * G + 0.114 * B;
 
 				counts[ lid ][ ( int )I ]++;
-
-				pDebug[ get_global_id( 0 ) ] = get_global_id( 0 );
-
 			}
-			else
-			{
-				//pDebug[ get_global_id( 0 ) ] = 0xFF;
-			}
-
 		}
 	}
 

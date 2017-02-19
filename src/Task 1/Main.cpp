@@ -18,10 +18,10 @@ void CalcHistogram_CPU( const shared_ptr< SBitmapData > pData, array< size_t, 25
 		{
 			const auto pPixel = &pData->m_pBuffer[ i ];
 
-			double I = 25.0 //static_cast< double >( pPixel->red )
-				//0.299 * static_cast< double >( pPixel->red ) +
-				//0.587 * static_cast< double >( pPixel->green ) +
-				//0.114 * static_cast< double >( pPixel->blue )
+			double I =
+				0.299 * static_cast< double >( pPixel->red ) +
+				0.587 * static_cast< double >( pPixel->green ) +
+				0.114 * static_cast< double >( pPixel->blue )
 				;
 
 			arrHistogram[ static_cast< size_t >( I ) ]++;
@@ -63,10 +63,9 @@ void CalcHistogram_GPU(
 
 
 	cl_int status = 0;
-	cl_mem clPixelBuffer = clCreateBuffer( clContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof( cl_uchar4 ) * pData->m_nPixelCount, pData->m_pBuffer, &status );
+	cl_mem clPixelBuffer = clCreateBuffer( clContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, pData->m_nBuffLen, pData->m_pBuffer, &status );
 	cl_mem clResultBuffer = clCreateBuffer( clContext, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof( cl_int ) * nr_workgroups * 256, pResultBuffer, &status );
 
-	cl_mem clDebugBuffer = clCreateBuffer( clContext, CL_MEM_WRITE_ONLY, sizeof( cl_int ) * nRoundedBufferSize, nullptr, nullptr );
 
 	if( !CL_SUCCEEDED( status ) )
 	{
@@ -80,7 +79,6 @@ void CalcHistogram_GPU(
 	status = clSetKernelArg( pStatistic->GetKernel( ), 0, sizeof( cl_mem ), &clPixelBuffer );
 	status = clSetKernelArg( pStatistic->GetKernel( ), 1, sizeof( cl_int ), &nPixelCount );
 	status = clSetKernelArg( pStatistic->GetKernel( ), 2, sizeof( cl_mem ), &clResultBuffer );
-	status = clSetKernelArg( pStatistic->GetKernel( ), 3, sizeof( cl_mem ), &clDebugBuffer );
 
 	if( !CL_SUCCEEDED( status ) )
 	{
@@ -103,21 +101,6 @@ void CalcHistogram_GPU(
 
 		status = clFinish( clCommandQueue );
 	} );
-
-	//> debugging
-	cl_int* p = new cl_int[ nRoundedBufferSize ];
-	status = clEnqueueReadBuffer( clCommandQueue, clDebugBuffer, CL_TRUE, 0, sizeof( cl_int ) * nRoundedBufferSize, p, 0, NULL, NULL );
-
-// 	for( size_t i = 0; i < nRoundedBufferSize; i++ )
-// 	{
-// 		if( p[ i ] == 0xFF )
-// 		{
-// 			__debugbreak( );
-// 		}
-// 	}
-
-	SafeDeleteArray( p );
-
 
 	cl_int nClWorkGroups = static_cast< cl_int >( nr_workgroups );
 	status = clSetKernelArg( pReduce->GetKernel( ), 0, sizeof( cl_mem ), &clResultBuffer );
@@ -144,12 +127,6 @@ void CalcHistogram_GPU(
 		status = clFinish( clCommandQueue );
 	} );
 
-
-
-	//> debugging
-// 	uint8_t* p = new uint8_t[ sizeof( cl_int ) * nr_workgroups * 256 ];
-// 	status = clEnqueueReadBuffer( clCommandQueue, clResultBuffer, CL_TRUE, 0, sizeof( cl_int ) * nr_workgroups * 256, p, 0, NULL, NULL );
-
 	status = clEnqueueReadBuffer( clCommandQueue, clResultBuffer, CL_TRUE, 0, sizeof( cl_int ) * 256, &arrHistogram[ 0 ], 0, NULL, NULL );
 
 	if( !CL_SUCCEEDED( status ) )
@@ -171,38 +148,6 @@ void CalcHistogram_GPU(
 int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 {
 	std::wcout << L"Task 1.0 (Histogram)" << std::endl;
-
-// 	int arr[ 8192 ] = { };
-// 	//memset( arr, 0, 8192 );
-// 
-
-//  	int n = 0;
-//   	//0000033f
-//  	for( int wid = 0; wid < 26; wid++ )
-//  	{
-//  		for( int lid = 0; lid < 32; lid++ )
-//  		{
-//  			for( int r = 0; r < 8; r++ )
-//  			{
-//  				for( int k = 0; k < 32; k++ )
-//  				{
-//  					//for( int i = 0; i < 8; i++ )
-//  					{
-//  						
-// 						if( ( ( lid + k * 32 ) + ( r * 1024 ) ) >= 211600 )
-// 						{
-// 							__debugbreak( );
-// 						}
-//  
-//  						n++;
-//  						//arr[ ( lid + k * 32 ) + ( i * 1024 )] += 25;
-//  						printf( "lid: %d %d\n", lid, ( ( lid + k * 32 ) + ( r * 1024 ) ) );
-//  					}
-//  				}
-//  			}
-//  		}
-//  	}
-
 
 
 	shared_ptr< COpenCLKernel >	pStatistic;
