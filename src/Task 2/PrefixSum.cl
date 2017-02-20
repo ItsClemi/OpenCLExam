@@ -5,7 +5,7 @@
 #define GX get_global_id(0)
 #define LX get_local_id(0)
 
-//> Something in here is broken:
+//> Something is broken here:
 //> I'll get random failures above 4k elements
 __kernel void calcPrefix256_Broken( __global int* in, __global int* out, __global int* pHelper )
 {
@@ -116,26 +116,12 @@ __kernel void calcPrefix256( const __global int* in, __global int* out, __global
 	out[ gid ] = localArray[ lid ];
 
 
-	if( pHelper && LX == 255 )
+	if( LX == 255 )
 	{
 		const int groupid = get_group_id( 0 );
 
 		pHelper[ groupid ] = in[ GX ] + localArray[ LX ];
 	}
-	//else 
-	//{
-	//	if( gid > 0 )
-	//	{
-	//		out[ gid ] = in[ GX ] + localArray[ LX ];
-	//	}
-	//}
-
-	//if( pHelper && LX == 255 )
-	//{
-	//	const int groupid = get_group_id( 0 );
-
-	//	pHelper[ groupid ] = in[ GX ] + localArray[ LX ];
-	//}
 }
 
 

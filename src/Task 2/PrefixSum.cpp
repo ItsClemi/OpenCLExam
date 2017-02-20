@@ -1,38 +1,6 @@
 #include "stdafx.h"
 #include "PrefixSum.h"
 
-
-void CalcPrefix_Rec( cl_mem clBuffC, cl_mem clBuffD, size_t nHelperLength )
-{
-	const auto pKernel = GetCLManager( )->GetKernelByName( L"calcPrefix256" );
-
-	const auto clContext = GetCLManager( )->GetContext( );
-	const auto clQueue = GetCLManager( )->GetCommandQueue( );
-
-
-	cl_int status = 0;
-
-
-
-	status |= clSetKernelArg( pKernel->GetKernel( ), 0, sizeof( cl_mem ), &clBuffC );
-	status |= clSetKernelArg( pKernel->GetKernel( ), 1, sizeof( cl_mem ), &clBuffD );
-	status |= clSetKernelArg( pKernel->GetKernel( ), 2, sizeof( cl_mem ), nullptr );
-
-	size_t global_work_size[ 1 ] = { nHelperLength };
-	size_t local_work_size[ 1 ] = { 256 };
-	status = clEnqueueNDRangeKernel( clQueue, pKernel->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
-
-// 	if( nHelperLength > 256 )
-// 	{
-// 		//> Recursive decay
-// 		const size_t nLength = ( ( nHelperLength / 256 ) + 255 ) / 256 * 256;
-// 
-// 		__debugbreak( );
-// 		CalcPrefix_Rec( clBuffD, clBuffC, nLength );
-// 	}
-}
-
-
 void CalcPrefix_PreRec( const cl_mem clBuffA, cl_mem clBuffB, size_t nAlignedLength )
 {
 	const auto clContext = GetCLManager( )->GetContext( );
@@ -45,6 +13,10 @@ void CalcPrefix_PreRec( const cl_mem clBuffA, cl_mem clBuffB, size_t nAlignedLen
 	cl_mem clBuffC = clCreateBuffer( clContext, CL_MEM_READ_WRITE, nHelperLength * sizeof( cl_int ), nullptr, &status );
 	cl_mem clBuffD = clCreateBuffer( clContext, CL_MEM_READ_WRITE, nHelperLength * sizeof( cl_int ), nullptr, &status );
 
+	if( !CL_SUCCEEDED( status ) )
+	{
+		throw std::runtime_error( "clCreateBuffer failed" );
+	}
 
 	const auto pKernel = GetCLManager( )->GetKernelByName( L"calcPrefix256" );
 	const auto pKernelFinalize = GetCLManager( )->GetKernelByName( L"finalize" );
@@ -55,30 +27,54 @@ void CalcPrefix_PreRec( const cl_mem clBuffA, cl_mem clBuffB, size_t nAlignedLen
 	status |= clSetKernelArg( pKernel->GetKernel( ), 1, sizeof( cl_mem ), &clBuffB );
 	status |= clSetKernelArg( pKernel->GetKernel( ), 2, sizeof( cl_mem ), &clBuffC );
 
-	size_t global_work_size[ 1 ] = { nAlignedLength };
-	size_t local_work_size[ 1 ] = { 256 };
+	if( !CL_SUCCEEDED( status ) )
+	{
+		throw std::runtime_error( "clSetKernelArg failed" );
+	}
+
+	const size_t global_work_size[ 1 ] = { nAlignedLength };
+	const size_t local_work_size[ 1 ] = { 256 };
+
+	// Running the kernel.
 	status = clEnqueueNDRangeKernel( clQueue, pKernel->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
 
-
+	if( !CL_SUCCEEDED( status ) )
+	{
+		throw std::runtime_error( "clEnqueueNDRangeKernel failed" );
+	}
 
 	if( nAlignedLength > 256 )
 	{
 		//> create field D
 		CalcPrefix_PreRec( clBuffC, clBuffD, nHelperLength );
 
-
 		//> add all elements from D to B
 		status |= clSetKernelArg( pKernelFinalize->GetKernel( ), 0, sizeof( cl_mem ), &clBuffB );
 		status |= clSetKernelArg( pKernelFinalize->GetKernel( ), 1, sizeof( cl_mem ), &clBuffD );
 
+		if( !CL_SUCCEEDED( status ) )
+		{
+			throw std::runtime_error( "clSetKernelArg (2) failed" );
+		}
+
 		// Running the kernel.
-		size_t global_work_size[ 1 ] = { nAlignedLength };
-		size_t local_work_size[ 1 ] = { 256 };
+		const size_t global_work_size[ 1 ] = { nAlignedLength };
+		const size_t local_work_size[ 1 ] = { 256 };
 		status = clEnqueueNDRangeKernel( clQueue, pKernelFinalize->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
+
+		if( !CL_SUCCEEDED( status ) )
+		{
+			throw std::runtime_error( "clEnqueueNDRangeKernel (2) failed" );
+		}
 	}
 
 	status = clReleaseMemObject( clBuffD );
 	status = clReleaseMemObject( clBuffC );
+
+	if( !CL_SUCCEEDED( status ) )
+	{
+		throw std::runtime_error( "failed to release memory object" );
+	}
 }
 
 void CalcPrefix_GPU( const int* pNumbers, int* pResult, size_t nLength )
@@ -93,6 +89,11 @@ void CalcPrefix_GPU( const int* pNumbers, int* pResult, size_t nLength )
 	cl_mem clBuffA = clCreateBuffer( clContext, CL_MEM_READ_ONLY, nAlignedLength * sizeof( cl_int ), nullptr, &status );
 	cl_mem clBuffB = clCreateBuffer( clContext, CL_MEM_READ_WRITE, nAlignedLength * sizeof( cl_int ), nullptr, &status );
 
+	if( !CL_SUCCEEDED( status ) )
+	{
+		throw std::runtime_error( "clCreateBuffer failed" );
+	}
+
 	status = clEnqueueWriteBuffer( 
 		clQueue, 
 		clBuffA,
@@ -105,6 +106,12 @@ void CalcPrefix_GPU( const int* pNumbers, int* pResult, size_t nLength )
 		nullptr
 	);
 
+	if( !CL_SUCCEEDED( status ) )
+	{
+		throw std::runtime_error( "clEnqueueWriteBuffer failed" );
+	}
+
+	//> Recursive calc
 	CalcPrefix_PreRec( clBuffA, clBuffB, nAlignedLength );
 
 
@@ -117,18 +124,11 @@ void CalcPrefix_GPU( const int* pNumbers, int* pResult, size_t nLength )
 		return;
 	}
 
-
-
 	status = clReleaseMemObject( clBuffB );
 	status = clReleaseMemObject( clBuffA );
 
+	if( !CL_SUCCEEDED( status ) )
+	{
+		throw std::runtime_error( "failed to release memory object" );
+	}
 }
-
-
-// int* c = new int[ nHelperLength ];
-// 
-// status = clEnqueueReadBuffer( clQueue, clBuffC, CL_TRUE, 0, nHelperLength * sizeof( int ), c, 0, nullptr, nullptr );
-// 
-// int* d = new int[ nHelperLength ];
-// 
-// status = clEnqueueReadBuffer( clQueue, clBuffD, CL_TRUE, 0, nHelperLength * sizeof( int ), d, 0, nullptr, nullptr );
