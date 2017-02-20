@@ -22,6 +22,8 @@ public:
 
 	const std::shared_ptr< COpenCLKernel > CreateKernel( const std::wstring& szKernel );
 
+	void InitializeKernel( const std::wstring& szKernel );
+
 private:
 	void BuildKernel( const std::vector< char >& vecProgram );
 
@@ -59,6 +61,9 @@ public:
 		return m_bUseGPU;
 	}
 
+public:
+	std::shared_ptr< COpenCLKernel > GetKernelByName( std::wstring szKernelName ) const;
+
 
 private:
 	cl_uint				m_nDeviceNo = 1;
@@ -72,6 +77,8 @@ private:
 
 
 	bool				m_bUseGPU = false;
+
+	std::vector< std::shared_ptr< COpenCLKernel > >	 m_vecKernels;
 
 };
 

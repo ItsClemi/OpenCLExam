@@ -13,6 +13,8 @@ COpenCLMangager::COpenCLMangager( )
 
 COpenCLMangager::~COpenCLMangager( )
 {
+	m_vecKernels.clear( );
+
 	if( m_clProgram )
 	{
 		clReleaseProgram( m_clProgram );
@@ -198,9 +200,20 @@ const std::shared_ptr< COpenCLKernel > COpenCLMangager::CreateKernel( const std:
 {
 	const auto pKernel = make_shared< COpenCLKernel >( );
 	{
-		pKernel->CreateKernel( WstringToString( szKernel ) );
+		pKernel->CreateKernel( szKernel );
 	}
+	m_vecKernels.push_back( pKernel );
+
 	return pKernel;
+}
+
+void COpenCLMangager::InitializeKernel( const std::wstring& szKernel )
+{
+	const auto pKernel = make_shared< COpenCLKernel >( );
+	{
+		pKernel->CreateKernel( szKernel );
+	}
+	m_vecKernels.push_back( pKernel );
 }
 
 void COpenCLMangager::BuildKernel( const std::vector< char >& vecProgram )
@@ -258,5 +271,18 @@ const std::string COpenCLMangager::GetBuildErrorMsg( )
 	}
 
 	return szError;
+}
+
+std::shared_ptr< COpenCLKernel > COpenCLMangager::GetKernelByName( std::wstring szKernelName ) const
+{
+	for( const auto& i : m_vecKernels )
+	{
+		if( i->GetName( ).compare( szKernelName ) == 0 )
+		{
+			return i;
+		}
+	}
+
+	return std::shared_ptr< COpenCLKernel >( nullptr );
 }
 

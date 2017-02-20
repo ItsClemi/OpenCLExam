@@ -36,6 +36,9 @@
     <ClInclude Include="Export\Gdiplus\GdiHelper.h">
       <Filter>Export\Gdiplus</Filter>
     </ClInclude>
+    <ClInclude Include="Export\OpenCL\OpenCLHelper.h">
+      <Filter>Export\OpenCL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

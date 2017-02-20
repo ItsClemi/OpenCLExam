@@ -60,3 +60,9 @@ namespace Profiler
 		return std::chrono::duration_cast< TM >( end - begin ).count( );
 	}
 };
+
+
+inline int myRand( int low, int high )
+{
+	return rand( ) % ( high - low + 1 ) + low;
+}

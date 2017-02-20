@@ -19,6 +19,7 @@
 //Own
 #include <Core/Export/Helper/CommonHelper.h>
 
+#include <Core/Export/OpenCL/OpenCLHelper.h>
 #include <Core/Export/OpenCL/OpenCLManager.h>
 #include <Core/Export/OpenCL/OpenCLKernel.h>
 

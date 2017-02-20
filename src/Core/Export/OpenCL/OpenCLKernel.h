@@ -7,26 +7,22 @@ public:
 	~COpenCLKernel( );
 
 public:
-	void CreateKernel( const std::string& szKernel );
+	void CreateKernel( const std::wstring& szKernelName );
 
 public:
-	const auto GetContext( ) const
-	{
-		return GetCLManager()->GetContext( );
-	}
-
-	const auto GetCommandQueue( ) const
-	{
-		return GetCLManager( )->GetCommandQueue( );
-	}
-
 	const auto GetKernel( ) const
 	{
 		return m_clKernel;
 	}
 
+	const auto& GetName( ) const
+	{
+		return m_szKernelName;
+	}
 
 private:
-
 	cl_kernel		m_clKernel = nullptr;
+
+	std::wstring	m_szKernelName;
+
 };
