@@ -3,63 +3,12 @@
 using namespace std;
 
 
-void BlendX( shared_ptr< SBitmapData > pBitmap )
+void BlendXY( shared_ptr< SBitmapData > pBitmap )
 {
 	const auto clContext = GetCLManager( )->GetContext( );
 	const auto clCommandQueue = GetCLManager( )->GetCommandQueue( );
 
-	const auto pKernel = GetCLManager( )->GetKernelByName( L"xblend" );
-
-
-	size_t nAlignedPixels = ( ( ( pBitmap->m_nPixelCount ) + 255 ) / 256 ) * 256;
-
-	cl_int status = 0;
-
-	cl_mem clBuffA = clCreateBuffer( clContext, CL_MEM_READ_ONLY, nAlignedPixels * sizeof( cl_uchar4 ), nullptr, &status );
-	cl_mem clBuffB = clCreateBuffer( clContext, CL_MEM_READ_WRITE, nAlignedPixels * sizeof( cl_uchar4 ), nullptr, &status );
-
-	status = clEnqueueWriteBuffer(
-		clCommandQueue,
-		clBuffA,
-		CL_TRUE,
-		0,
-		pBitmap->m_nBuffLen,
-		pBitmap->m_pBuffer,
-		0,
-		nullptr,
-		nullptr
-	);
-
-	cl_int nStride = static_cast< cl_int >( pBitmap->m_nStride / sizeof( SPixel ) );
-
-	status = clSetKernelArg( pKernel->GetKernel( ), 0, sizeof( cl_mem ), &clBuffA );
-	status = clSetKernelArg( pKernel->GetKernel( ), 1, sizeof( cl_mem ), &clBuffB );
-	status = clSetKernelArg( pKernel->GetKernel( ), 2, sizeof( cl_int ), &nStride );
-
-	size_t global_work_size[ 1 ] = { nAlignedPixels };
-	size_t local_work_size[ 1 ] = { 256 };
-
-	status = clEnqueueNDRangeKernel( clCommandQueue, pKernel->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
-
-	status = clEnqueueReadBuffer(
-		clCommandQueue,
-		clBuffB,
-		CL_TRUE,
-		0,
-		pBitmap->m_nBuffLen,
-		pBitmap->m_pBuffer,
-		0,
-		nullptr,
-		nullptr
-	);
-}
-
-void BlendY( shared_ptr< SBitmapData > pBitmap )
-{
-	const auto clContext = GetCLManager( )->GetContext( );
-	const auto clCommandQueue = GetCLManager( )->GetCommandQueue( );
-
-	const auto pKernel = GetCLManager( )->GetKernelByName( L"yblend" );
+	const auto pKernel = GetCLManager( )->GetKernelByName( L"xyblend" );
 
 
 	size_t nAlignedPixels = ( ( ( pBitmap->m_nPixelCount ) + 255 ) / 256 ) * 256;
@@ -90,7 +39,6 @@ void BlendY( shared_ptr< SBitmapData > pBitmap )
 	status = clSetKernelArg( pKernel->GetKernel( ), 2, sizeof( cl_int ), &nWidth );
 	status = clSetKernelArg( pKernel->GetKernel( ), 3, sizeof( cl_int ), &nHeight );
 
-
 	size_t global_work_size[ 1 ] = { nAlignedPixels };
 	size_t local_work_size[ 1 ] = { 256 };
 
@@ -108,7 +56,6 @@ void BlendY( shared_ptr< SBitmapData > pBitmap )
 		nullptr
 	);
 }
-
 
 int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 {
@@ -128,10 +75,9 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 
 		GetCLManager( )->LoadFile( L"Blend.cl" );
 
-		pBitmap = GetBitmapDataLocked( szPath2 );
+		pBitmap = GetBitmapDataLocked( szPath );
 
-		GetCLManager( )->InitializeKernel( L"xblend" );
-		GetCLManager( )->InitializeKernel( L"yblend" );
+		GetCLManager( )->InitializeKernel( L"xyblend" );
 
 	}
 	catch( const std::exception& e )
@@ -143,9 +89,7 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 	}
 
 
-	BlendX( pBitmap );
-	BlendY( pBitmap );
-
+	BlendXY( pBitmap );
 
 
 	pBitmap->CopyInternalBufferToBitmap( );
@@ -166,7 +110,7 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 	CLSID pngClsid;
 	GetEncoderClsid( L"image/png", &pngClsid );
 
-	if( pImage.Save( L"C:\\Users\\clemi\\Desktop\\222.png", &pngClsid, nullptr ) != Gdiplus::Status::Ok )
+	if( pImage.Save( L"C:\\Users\\clemi\\Desktop\\23322.png", &pngClsid, nullptr ) != Gdiplus::Status::Ok )
 	{
 		__debugbreak( );
 	}
