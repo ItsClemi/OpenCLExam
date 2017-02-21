@@ -36,12 +36,10 @@ void BlendX( shared_ptr< SBitmapData > pBitmap )
 	status = clSetKernelArg( pKernel->GetKernel( ), 1, sizeof( cl_mem ), &clBuffB );
 	status = clSetKernelArg( pKernel->GetKernel( ), 2, sizeof( cl_int ), &nStride );
 
-
 	size_t global_work_size[ 1 ] = { nAlignedPixels };
 	size_t local_work_size[ 1 ] = { 256 };
 
 	status = clEnqueueNDRangeKernel( clCommandQueue, pKernel->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
-
 
 	status = clEnqueueReadBuffer(
 		clCommandQueue,
@@ -54,33 +52,63 @@ void BlendX( shared_ptr< SBitmapData > pBitmap )
 		nullptr,
 		nullptr
 	);
-
-	pBitmap->CopyInternalBufferToBitmap( );
-
-	pBitmap->UnlockBitmapBits( );
-
-
-	Gdiplus::Bitmap pImage( pBitmap->GetWidth( ), pBitmap->GetHeight( ) );
-	{
-		Gdiplus::Graphics graphics( &pImage );
-		graphics.Clear( Gdiplus::Color::White );
-
-		graphics.DrawImage( pBitmap.get( ), 0, 0, (INT)pBitmap->GetWidth( ), (INT)pBitmap->GetHeight( ) );
-	}
-
-	//graphics.Save( );
-
-
-	CLSID pngClsid;
-	GetEncoderClsid( L"image/png", &pngClsid );
-
-	if( pImage.Save( L"C:\\Users\\clemi\\Desktop\\222.png", &pngClsid, nullptr ) != Gdiplus::Status::Ok )
-	{
-		__debugbreak( );
-	}
-
-
 }
+
+void BlendY( shared_ptr< SBitmapData > pBitmap )
+{
+	const auto clContext = GetCLManager( )->GetContext( );
+	const auto clCommandQueue = GetCLManager( )->GetCommandQueue( );
+
+	const auto pKernel = GetCLManager( )->GetKernelByName( L"yblend" );
+
+
+	size_t nAlignedPixels = ( ( ( pBitmap->m_nPixelCount ) + 255 ) / 256 ) * 256;
+
+	cl_int status = 0;
+
+	cl_mem clBuffA = clCreateBuffer( clContext, CL_MEM_READ_ONLY, nAlignedPixels * sizeof( cl_uchar4 ), nullptr, &status );
+	cl_mem clBuffB = clCreateBuffer( clContext, CL_MEM_READ_WRITE, nAlignedPixels * sizeof( cl_uchar4 ), nullptr, &status );
+
+	status = clEnqueueWriteBuffer(
+		clCommandQueue,
+		clBuffA,
+		CL_TRUE,
+		0,
+		pBitmap->m_nBuffLen,
+		pBitmap->m_pBuffer,
+		0,
+		nullptr,
+		nullptr
+	);
+
+	cl_int nWidth = static_cast< cl_int >( pBitmap->m_nWidth );
+	cl_int nHeight = static_cast< cl_int >( pBitmap->m_nHeight );
+
+
+	status = clSetKernelArg( pKernel->GetKernel( ), 0, sizeof( cl_mem ), &clBuffA );
+	status = clSetKernelArg( pKernel->GetKernel( ), 1, sizeof( cl_mem ), &clBuffB );
+	status = clSetKernelArg( pKernel->GetKernel( ), 2, sizeof( cl_int ), &nWidth );
+	status = clSetKernelArg( pKernel->GetKernel( ), 3, sizeof( cl_int ), &nHeight );
+
+
+	size_t global_work_size[ 1 ] = { nAlignedPixels };
+	size_t local_work_size[ 1 ] = { 256 };
+
+	status = clEnqueueNDRangeKernel( clCommandQueue, pKernel->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
+
+	status = clEnqueueReadBuffer(
+		clCommandQueue,
+		clBuffB,
+		CL_TRUE,
+		0,
+		pBitmap->m_nBuffLen,
+		pBitmap->m_pBuffer,
+		0,
+		nullptr,
+		nullptr
+	);
+}
+
 
 int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 {
@@ -100,9 +128,11 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 
 		GetCLManager( )->LoadFile( L"Blend.cl" );
 
-		pBitmap = GetBitmapDataLocked( szPath2 );
+		pBitmap = GetBitmapDataLocked( szPath );
 
 		GetCLManager( )->InitializeKernel( L"xblend" );
+		GetCLManager( )->InitializeKernel( L"yblend" );
+
 	}
 	catch( const std::exception& e )
 	{
@@ -112,15 +142,34 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 		return -1;
 	}
 
+
 	BlendX( pBitmap );
+	BlendY( pBitmap );
 
 
 
+	pBitmap->CopyInternalBufferToBitmap( );
+
+	pBitmap->UnlockBitmapBits( );
+
+	Gdiplus::Bitmap pImage( pBitmap->GetWidth( ), pBitmap->GetHeight( ) );
+	{
+		Gdiplus::Graphics graphics( &pImage );
+		graphics.Clear( Gdiplus::Color::White );
+
+		graphics.DrawImage( pBitmap.get( ), 0, 0, ( INT )pBitmap->GetWidth( ), ( INT )pBitmap->GetHeight( ) );
+	}
+
+	//graphics.Save( );
 
 
+	CLSID pngClsid;
+	GetEncoderClsid( L"image/png", &pngClsid );
 
-
-
+	if( pImage.Save( L"C:\\Users\\clemi\\Desktop\\222.png", &pngClsid, nullptr ) != Gdiplus::Status::Ok )
+	{
+		__debugbreak( );
+	}
 
 
 	return 0;

@@ -28,10 +28,24 @@ int GetPixelPosV_Translated( int nStride, int x, int y )
 	return ( y * ( nStride ) ) + ( ( x + nStrideHalf ) % nStride );
 }
 
-int GetPixelPosV_Normal( int nStride, int x, int y )
+int GetPixelPos_Normal( int nStride, int x, int y )
 {
 	return ( y * ( nStride ) ) + x;
 }
+
+int GetPixelPosH_Translated( int x, int y, int nWidth, int nHeight )
+{
+	if( x > nWidth || y > nHeight )
+	{
+		//> map back to padding
+		return ( y * ( nWidth ) ) + x;
+	}
+
+	const int nHeightHalf = ( nHeight / 2 ) + ( nHeight % 2 );
+
+	return ( ( ( y + nHeightHalf ) % nHeight ) * ( nWidth ) ) + x;
+}
+
 
 
 uchar4 applyMask( uchar4 pixel, float fMask )
@@ -54,53 +68,57 @@ __kernel void xblend( const __global uchar4* in, __global uchar4* out, const int
 	const int lid = get_local_id( 0 );
 	const int gid = get_global_id( 0 );
 	const int groupid = get_group_id( 0 );
-	
+
 	const int2 pos = ( int2 )(
 		( ( groupid * 256 ) + lid ) % nStride,
 		( ( groupid * 256 ) + lid ) / nStride
 		);
 
 	{
-		uchar4 pixelA = in[ GetPixelPosV_Normal( nStride, pos.x, pos.y ) ];
+		uchar4 pixelA = in[ GetPixelPos_Normal( nStride, pos.x, pos.y ) ];
 		uchar4 pixelB = in[ GetPixelPosV_Translated( nStride, pos.x, pos.y ) ];
 		barrier( CLK_LOCAL_MEM_FENCE );
-		
+
 		pixelA = applyMask( pixelA, calcMaskI( pos.x, ( float )nStride ) );
 		pixelB = applyMask( pixelB, calcMask( pos.x, ( float )nStride ) );
 
 
-		out[ gid ] = (uchar4)( 
-			pixelA.x + pixelB.x, 
-			pixelA.y + pixelB.y, 
-			pixelA.z + pixelB.z, 
-			0xFF 
-		);
+		out[ gid ] = ( uchar4 )(
+			pixelA.x + pixelB.x,
+			pixelA.y + pixelB.y,
+			pixelA.z + pixelB.z,
+			0xFF
+			);
 	}
 }
 
 
-__kernel void yblend( __global uchar4* in, __global uchar4* out )
+__kernel void yblend( __global uchar4* in, __global uchar4* out, const int nWidth, const int nHeight )
 {
-	/*
-	Nun verfährt man ausgehend von Bild B in vertikaler Richtung analog, indem man
-	das Bild in y-Richtung um die halbe Höhe zyklisch verschiebt und mit dem Originalbild
-	B überblendet.
-
-	Die Blendmasken a und a‘ sind dabei um 90° gedreht.
-	*/
+	const int lid = get_local_id( 0 );
+	const int gid = get_global_id( 0 );
+	const int groupid = get_group_id( 0 );
 
 
+	const int2 pos = ( int2 )(
+		( ( groupid * 256 ) + lid ) % nWidth,
+		( ( groupid * 256 ) + lid ) / nWidth
+		);
+
+	{
+		uchar4 pixelA = in[ GetPixelPos_Normal( nWidth, pos.x, pos.y ) ];
+		uchar4 pixelB = in[ GetPixelPosH_Translated( pos.x, pos.y, nWidth, nHeight ) ];
+		barrier( CLK_LOCAL_MEM_FENCE );
+
+		pixelA = applyMask( pixelA, calcMaskI( pos.y, ( float )nHeight ) );
+		pixelB = applyMask( pixelB, calcMask( pos.y, ( float )nHeight ) );
+
+
+		out[ gid ] = ( uchar4 )(
+			pixelA.x + pixelB.x,
+			pixelA.y + pixelB.y,
+			pixelA.z + pixelB.z,
+			0xFF
+			);
+	}
 }
-
-
-/*
-auto fMapV = [ ]( size_t nStride, int x, int y ) {
-const auto nStrideHalf = ( nStride / 2 ) + ( nStride % 2 );
-
-return ( y * ( nStride ) ) + ( ( x + nStrideHalf ) % nStride );
-};
-
-auto fMapNormal = [ ]( size_t nStride, int x, int y ) {
-return ( y * ( nStride ) ) + x;
-};
-*/
