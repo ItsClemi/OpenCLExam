@@ -120,15 +120,20 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 
 	try
 	{
+		GetCLManager( )->LoadFile( L"Blend.cl" );
+
+#ifdef _DEBUG
 		static const std::wstring szPath = L"C:\\Users\\clemi\\Desktop\\1711533.png";
 		static const std::wstring szPath2 = L"C:\\Users\\clemi\\Desktop\\lul.png";
 		static const std::wstring szPath3 = L"C:\\Users\\clemi\\Desktop\\small.png";
 		static const std::wstring szPath4 = L"C:\\Users\\clemi\\Desktop\\Bg_Tree.jpg";
 
+		pBitmap = GetBitmapDataLocked( szPath.c_str( ) );
 
-		GetCLManager( )->LoadFile( L"Blend.cl" );
+#else
+		pBitmap = GetBitmapDataLocked( ImageOpenDlg( ).c_str( ) );
+#endif
 
-		pBitmap = GetBitmapDataLocked( szPath2 );
 
 		GetCLManager( )->InitializeKernel( L"xblend" );
 		GetCLManager( )->InitializeKernel( L"yblend" );
@@ -160,17 +165,21 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 		graphics.DrawImage( pBitmap.get( ), 0, 0, ( INT )pBitmap->GetWidth( ), ( INT )pBitmap->GetHeight( ) );
 	}
 
-	//graphics.Save( );
-
-
 	CLSID pngClsid;
 	GetEncoderClsid( L"image/png", &pngClsid );
 
-	if( pImage.Save( L"C:\\Users\\clemi\\Desktop\\222.png", &pngClsid, nullptr ) != Gdiplus::Status::Ok )
+	const auto szPath = ImageSaveDlg( );
+
+	if( pImage.Save( szPath.c_str( ), &pngClsid, nullptr ) != Gdiplus::Status::Ok )
 	{
-		__debugbreak( );
+		std::wcout << L"Failed to write image to " << szPath << std::endl;
+	}
+	else
+	{
+		std::wcout << L"Invalid path " << std::endl;
 	}
 
+	system( "pause" );
 
 	return 0;
 }

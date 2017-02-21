@@ -110,12 +110,12 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 
 #else
 	size_t nLength = 2048;
-	std::cout << L"Enter Field length " << std::endl;
+	std::wcout << L"Enter Field length " << std::endl;
 	std::cin >> nLength;
 
 	bool bResult = CalcPrefix_Check( nLength );
 
-	std::cout << bResult ? "true" : "false" << std::endl;
+	std::cout << "Equal? " << ( bResult ? "true" : "false" ) << std::endl;
 
 #endif
 	system( "pause" );

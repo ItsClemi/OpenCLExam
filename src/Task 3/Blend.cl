@@ -92,7 +92,6 @@ __kernel void xblend( const __global uchar4* in, __global uchar4* out, const int
 	}
 }
 
-
 __kernel void yblend( __global uchar4* in, __global uchar4* out, const int nWidth, const int nHeight )
 {
 	const int lid = get_local_id( 0 );

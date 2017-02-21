@@ -155,7 +155,12 @@ int wmain( int argc, wchar_t* argv[ ], wchar_t* envp[ ] )
 		pStatistic = GetCLManager( )->CreateKernel( L"calcStatistic" );
 		pReduce = GetCLManager( )->CreateKernel( L"reduceStatistic" );
 
+
+#ifdef _DEBUG
 		pBitmap = GetBitmapData( L"C:\\Users\\clemi\\Desktop\\1711533.png" );
+#else
+		pBitmap = GetBitmapData( ImageOpenDlg( ).c_str( ) );
+#endif
 	}
 	catch( const std::exception& e )
 	{
