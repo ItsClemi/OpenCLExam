@@ -4,7 +4,7 @@
 void CalcPrefix_PreRec( const cl_mem clBuffA, cl_mem clBuffB, size_t nAlignedLength )
 {
 	const auto clContext = GetCLManager( )->GetContext( );
-	const auto clQueue = GetCLManager( )->GetCommandQueue( );
+	const auto clCommandQueue = GetCLManager( )->GetCommandQueue( );
 
 	const size_t nHelperLength = ( ( nAlignedLength / 256 ) + 255 ) / 256 * 256;
 
@@ -36,7 +36,7 @@ void CalcPrefix_PreRec( const cl_mem clBuffA, cl_mem clBuffB, size_t nAlignedLen
 	const size_t local_work_size[ 1 ] = { 256 };
 
 	// Running the kernel.
-	status = clEnqueueNDRangeKernel( clQueue, pKernel->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
+	status = clEnqueueNDRangeKernel( clCommandQueue, pKernel->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
 
 	if( !CL_SUCCEEDED( status ) )
 	{
@@ -60,7 +60,7 @@ void CalcPrefix_PreRec( const cl_mem clBuffA, cl_mem clBuffB, size_t nAlignedLen
 		// Running the kernel.
 		const size_t global_work_size[ 1 ] = { nAlignedLength };
 		const size_t local_work_size[ 1 ] = { 256 };
-		status = clEnqueueNDRangeKernel( clQueue, pKernelFinalize->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
+		status = clEnqueueNDRangeKernel( clCommandQueue, pKernelFinalize->GetKernel( ), 1, NULL, global_work_size, local_work_size, 0, NULL, NULL );
 
 		if( !CL_SUCCEEDED( status ) )
 		{

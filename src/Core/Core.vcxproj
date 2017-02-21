@@ -89,7 +89,6 @@
     <ClInclude Include="Export\CoreExport.h" />
     <ClInclude Include="Export\Gdiplus\GdiHelper.h" />
     <ClInclude Include="Export\Helper\CommonHelper.h" />
-    <ClInclude Include="Export\OpenCL\OpenCLHelper.h" />
     <ClInclude Include="Export\OpenCL\OpenCLManager.h" />
     <ClInclude Include="Export\OpenCL\OpenCLKernel.h" />
     <ClInclude Include="stdafx.h" />
